@@ -2,6 +2,11 @@ package com.example.boredomjar
 
 import android.content.Context
 import android.content.Intent
+import android.hardware.Sensor
+import android.hardware.SensorEvent
+import android.hardware.SensorEventListener
+import android.hardware.SensorManager
+import android.media.MediaPlayer
 import android.os.Build
 import android.os.Bundle
 import android.os.VibrationEffect
@@ -12,12 +17,13 @@ import android.widget.RadioButton
 import android.widget.TextView
 import android.widget.Toast
 import androidx.appcompat.app.AppCompatActivity
+import kotlin.math.sqrt
 import kotlin.random.Random
 
-class MainActivity : AppCompatActivity() {
+// Implement SensorEventListener to detect shaking
+class MainActivity : AppCompatActivity(), SensorEventListener {
 
-    // --- 1. THE TASK LISTS ---
-
+    // --- TASK LISTS ---
     private val activeTasks = listOf(
         "Do 20 jumping jacks.",
         "Go for a 10-minute walk.",
@@ -45,7 +51,6 @@ class MainActivity : AppCompatActivity() {
         "Stare at the wall and do nothing for 60 seconds."
     )
 
-    // NEW: Crush / Social Challenges
     private val crushTasks = listOf(
         "Reply to your crush's story with a '🔥' reaction.",
         "Send your crush a funny meme.",
@@ -56,7 +61,6 @@ class MainActivity : AppCompatActivity() {
         "Text them: 'I had a weird dream about you...'"
     )
 
-    // NEW: Funny / Playable Moments
     private val funnyTasks = listOf(
         "Try to lick your elbow.",
         "Talk in a British accent for the next 10 minutes.",
@@ -69,6 +73,12 @@ class MainActivity : AppCompatActivity() {
 
     private var lastMission = ""
 
+    // Sound & Sensor Variables
+    private var mediaPlayer: MediaPlayer? = null
+    private var sensorManager: SensorManager? = null
+    private var accelerometer: Sensor? = null
+    private var lastShakeTime: Long = 0
+
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         setContentView(R.layout.activity_main)
@@ -76,48 +86,29 @@ class MainActivity : AppCompatActivity() {
         supportActionBar?.setDisplayHomeAsUpEnabled(true)
         supportActionBar?.title = "Mission Generator"
 
-        val tvResult = findViewById<TextView>(R.id.tvResult)
+        // 1. Setup Sound (Try-Catch in case file is missing)
+        try {
+            // Make sure you have 'pop_sound.mp3' in 'res/raw/' folder
+            mediaPlayer = MediaPlayer.create(this, R.raw.pop_sound)
+        } catch (e: Exception) {
+            e.printStackTrace() // Ignore if sound is missing
+        }
+
+        // 2. Setup Sensor (Shake Detection)
+        sensorManager = getSystemService(Context.SENSOR_SERVICE) as SensorManager
+        accelerometer = sensorManager?.getDefaultSensor(Sensor.TYPE_ACCELEROMETER)
+
         val btnGenerate = findViewById<Button>(R.id.btnGetActivity)
         val btnShare = findViewById<Button>(R.id.btnShare)
 
-        // Find Radio Buttons
-        val rbActive = findViewById<RadioButton>(R.id.rbActive)
-        val rbCreative = findViewById<RadioButton>(R.id.rbCreative)
-        val rbCrush = findViewById<RadioButton>(R.id.rbCrush) // New
-        val rbFunny = findViewById<RadioButton>(R.id.rbFunny) // New
-
-        // LOGIC: GENERATE MISSION
+        // BUTTON CLICK LOGIC
         btnGenerate.setOnClickListener {
-
-            // Determine which list to use
-            val selectedList = when {
-                rbActive.isChecked -> activeTasks
-                rbCreative.isChecked -> creativeTasks
-                rbCrush.isChecked -> crushTasks   // New Logic
-                rbFunny.isChecked -> funnyTasks   // New Logic
-                else -> chillTasks
-            }
-
-            // Pick random item
-            var newMission = selectedList[Random.nextInt(selectedList.size)]
-
-            // Avoid Repeats
-            while (newMission == lastMission && selectedList.size > 1) {
-                newMission = selectedList[Random.nextInt(selectedList.size)]
-            }
-            lastMission = newMission
-
-            // Animation
-            tvResult.alpha = 0f
-            tvResult.text = newMission
-            tvResult.animate().alpha(1f).setDuration(500)
-
-            // Vibrate if allowed
-            vibratePhone()
+            generateMission()
         }
 
         // SHARE LOGIC
         btnShare.setOnClickListener {
+            val tvResult = findViewById<TextView>(R.id.tvResult)
             val currentMission = tvResult.text.toString()
             if (currentMission.contains("Pick a vibe")) {
                 Toast.makeText(this, "Generate a mission first!", Toast.LENGTH_SHORT).show()
@@ -132,12 +123,60 @@ class MainActivity : AppCompatActivity() {
         }
     }
 
+    // --- MAIN LOGIC: GENERATE MISSION ---
+    private fun generateMission() {
+        val tvResult = findViewById<TextView>(R.id.tvResult)
+
+        // Find Radio Buttons
+        val rbActive = findViewById<RadioButton>(R.id.rbActive)
+        val rbCreative = findViewById<RadioButton>(R.id.rbCreative)
+        val rbCrush = findViewById<RadioButton>(R.id.rbCrush)
+        val rbFunny = findViewById<RadioButton>(R.id.rbFunny)
+
+        // Select List
+        val selectedList = when {
+            rbActive.isChecked -> activeTasks
+            rbCreative.isChecked -> creativeTasks
+            rbCrush.isChecked -> crushTasks
+            rbFunny.isChecked -> funnyTasks
+            else -> chillTasks
+        }
+
+        // Pick Random
+        var newMission = selectedList[Random.nextInt(selectedList.size)]
+        while (newMission == lastMission && selectedList.size > 1) {
+            newMission = selectedList[Random.nextInt(selectedList.size)]
+        }
+        lastMission = newMission
+
+        // Animate & Update Text
+        tvResult.alpha = 0f
+        tvResult.text = newMission
+        tvResult.animate().alpha(1f).setDuration(500)
+
+        // Effects
+        vibratePhone()
+        playSound()
+    }
+
+    // --- SOUND HELPER ---
+    private fun playSound() {
+        try {
+            if (mediaPlayer?.isPlaying == true) {
+                mediaPlayer?.seekTo(0)
+            }
+            mediaPlayer?.start()
+        } catch (e: Exception) {
+            // Sound failed, no problem
+        }
+    }
+
+    // --- VIBRATION HELPER ---
     private fun vibratePhone() {
-        // Check settings first (Optional, but good practice)
+        // Check settings
         val sharedPref = getSharedPreferences("GameSettings", Context.MODE_PRIVATE)
         val isVibrateOn = sharedPref.getBoolean("vibrate_on", true)
-
-        if (!isVibrateOn) return // Stop if vibration is off in settings
+        if (!isVibrateOn) return
 
         val vibrator = if (Build.VERSION.SDK_INT >= 31) {
             val vibratorManager = getSystemService(Context.VIBRATOR_MANAGER_SERVICE) as VibratorManager
@@ -155,8 +194,56 @@ class MainActivity : AppCompatActivity() {
         }
     }
 
+    // --- SHAKE DETECTION LOGIC ---
+    override fun onResume() {
+        super.onResume()
+        // Start listening to the sensor when app is open
+        accelerometer?.also { sensor ->
+            sensorManager?.registerListener(this, sensor, SensorManager.SENSOR_DELAY_UI)
+        }
+    }
+
+    override fun onPause() {
+        super.onPause()
+        // Stop listening when app is closed to save battery
+        sensorManager?.unregisterListener(this)
+    }
+
+    override fun onSensorChanged(event: SensorEvent?) {
+        if (event?.sensor?.type == Sensor.TYPE_ACCELEROMETER) {
+            val x = event.values[0]
+            val y = event.values[1]
+            val z = event.values[2]
+
+            // Calculate movement force
+            val acceleration = sqrt(x * x + y * y + z * z) - SensorManager.GRAVITY_EARTH
+
+            // If movement is strong enough (Shake detected!)
+            if (acceleration > 12) {
+                val currentTime = System.currentTimeMillis()
+                // Prevent accidental double-shakes (wait 1 second between shakes)
+                if (currentTime - lastShakeTime > 1000) {
+                    lastShakeTime = currentTime
+                    generateMission() // <--- SHAKE TRIGGERS THE MISSION!
+                    Toast.makeText(this, "🫨 Shook the Jar!", Toast.LENGTH_SHORT).show()
+                }
+            }
+        }
+    }
+
+    override fun onAccuracyChanged(sensor: Sensor?, accuracy: Int) {
+        // Not needed, but required by SensorEventListener
+    }
+
     override fun onSupportNavigateUp(): Boolean {
         finish()
         return true
+    }
+
+    // Clean up sound player
+    override fun onDestroy() {
+        super.onDestroy()
+        mediaPlayer?.release()
+        mediaPlayer = null
     }
 }
