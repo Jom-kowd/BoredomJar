@@ -12,6 +12,7 @@ import android.os.Bundle
 import android.os.VibrationEffect
 import android.os.Vibrator
 import android.os.VibratorManager
+import android.view.View
 import android.widget.Button
 import android.widget.RadioButton
 import android.widget.TextView
@@ -22,29 +23,12 @@ import kotlin.random.Random
 
 class MainActivity : AppCompatActivity(), SensorEventListener {
 
-    // --- LISTS ---
-    private val activeTasks = listOf(
-        "Do 20 jumping jacks.", "Go for a 10-minute walk.", "Clean your room for 5 minutes.",
-        "Hold a plank for 45 seconds.", "Dance to your favorite song.", "Do 10 situps right now."
-    )
-    private val creativeTasks = listOf(
-        "Draw a picture of your pet.", "Write a poem about a potato.", "Build a tower out of cards.",
-        "Take a photo of something blue.", "Learn a magic trick on YouTube.", "Invent a new signature."
-    )
-    private val chillTasks = listOf(
-        "Listen to a song from the 90s.", "Drink a glass of water.", "Meditate for 3 minutes.",
-        "Read one chapter of a book.", "Watch a satisfying video.", "Stare at the wall for 60 seconds."
-    )
-    private val crushTasks = listOf(
-        "Reply to your crush's story with a '🔥'.", "Send your crush a funny meme.",
-        "Ask your crush for a song recommendation.", "Comment on their latest photo.",
-        "Send a risky text, then put your phone away!", "Like their old photo from 2 years ago."
-    )
-    private val funnyTasks = listOf(
-        "Try to lick your elbow.", "Talk in a British accent for 10 mins.", "Walk backwards into the next room.",
-        "Sing 'Happy Birthday' to a random friend via voice note.", "Try not to blink for 60 seconds.",
-        "Take a selfie making the ugliest face possible."
-    )
+    private val activeTasks = listOf("Do 20 jumping jacks.", "Go for a walk.", "Clean room for 5 mins.", "Plank for 45s.", "Dance!", "10 situps.")
+    private val creativeTasks = listOf("Draw your pet.", "Write a potato poem.", "Build card tower.", "Photo of something blue.", "Learn magic trick.", "New signature.")
+    private val chillTasks = listOf("Listen to 90s song.", "Drink water.", "Meditate 3 mins.", "Read a chapter.", "Watch satisfying video.", "Stare at wall.")
+    private val crushTasks = listOf("Reply '🔥' to crush.", "Send meme to crush.", "Ask for song rec.", "Comment on photo.", "Risky text!", "Like old photo.")
+    private val funnyTasks = listOf("Lick your elbow.", "British accent 10 mins.", "Walk backwards.", "Sing Happy Birthday voice note.", "Don't blink 60s.", "Ugly selfie.")
+    private val chaosTasks = listOf("Clothes backward 1 hr.", "Text parent 'I know the truth'.", "Eat hot sauce.", "Stare at corner 5 mins.", "Whisper only.", "Mix OJ and Milk.")
 
     private var lastMission = ""
     private var mediaPlayer: MediaPlayer? = null
@@ -58,12 +42,19 @@ class MainActivity : AppCompatActivity(), SensorEventListener {
         supportActionBar?.setDisplayHomeAsUpEnabled(true)
         supportActionBar?.title = "Mission Generator"
 
-        try {
-            mediaPlayer = MediaPlayer.create(this, R.raw.pop_sound)
-        } catch (e: Exception) { e.printStackTrace() }
+        // Setup Sound
+        try { mediaPlayer = MediaPlayer.create(this, R.raw.pop_sound) } catch (e: Exception) {}
 
+        // Setup Sensor
         sensorManager = getSystemService(Context.SENSOR_SERVICE) as SensorManager
         accelerometer = sensorManager?.getDefaultSensor(Sensor.TYPE_ACCELEROMETER)
+
+        // Check Secret Logic
+        val rbChaos = findViewById<RadioButton>(R.id.rbChaos)
+        val sharedPref = getSharedPreferences("GameStats", Context.MODE_PRIVATE)
+        if (sharedPref.getBoolean("chaos_unlocked", false)) {
+            rbChaos.visibility = View.VISIBLE
+        }
 
         val btnGenerate = findViewById<Button>(R.id.btnGetActivity)
         val btnShare = findViewById<Button>(R.id.btnShare)
@@ -72,17 +63,12 @@ class MainActivity : AppCompatActivity(), SensorEventListener {
 
         btnShare.setOnClickListener {
             val tvResult = findViewById<TextView>(R.id.tvResult)
-            val currentMission = tvResult.text.toString()
-            if (currentMission.contains("Pick a vibe")) {
-                Toast.makeText(this, "Generate a mission first!", Toast.LENGTH_SHORT).show()
-            } else {
-                val shareIntent = Intent().apply {
-                    action = Intent.ACTION_SEND
-                    putExtra(Intent.EXTRA_TEXT, "Boredom Jar Challenge:\n$currentMission")
-                    type = "text/plain"
-                }
-                startActivity(Intent.createChooser(shareIntent, "Share via"))
+            val intent = Intent().apply {
+                action = Intent.ACTION_SEND
+                putExtra(Intent.EXTRA_TEXT, "Challenge: ${tvResult.text}")
+                type = "text/plain"
             }
+            startActivity(Intent.createChooser(intent, "Share via"))
         }
     }
 
@@ -92,12 +78,14 @@ class MainActivity : AppCompatActivity(), SensorEventListener {
         val rbCreative = findViewById<RadioButton>(R.id.rbCreative)
         val rbCrush = findViewById<RadioButton>(R.id.rbCrush)
         val rbFunny = findViewById<RadioButton>(R.id.rbFunny)
+        val rbChaos = findViewById<RadioButton>(R.id.rbChaos)
 
         val selectedList = when {
             rbActive.isChecked -> activeTasks
             rbCreative.isChecked -> creativeTasks
             rbCrush.isChecked -> crushTasks
             rbFunny.isChecked -> funnyTasks
+            rbChaos.isChecked -> chaosTasks
             else -> chillTasks
         }
 
@@ -111,10 +99,10 @@ class MainActivity : AppCompatActivity(), SensorEventListener {
         tvResult.text = newMission
         tvResult.animate().alpha(1f).setDuration(500)
 
-        // Save Score
+        // Save Stats
         val sharedPref = getSharedPreferences("GameStats", Context.MODE_PRIVATE)
-        val currentCount = sharedPref.getInt("kill_count", 0)
-        sharedPref.edit().putInt("kill_count", currentCount + 1).apply()
+        val count = sharedPref.getInt("kill_count", 0)
+        sharedPref.edit().putInt("kill_count", count + 1).apply()
 
         vibratePhone()
         playSound()
@@ -122,12 +110,12 @@ class MainActivity : AppCompatActivity(), SensorEventListener {
 
     private fun playSound() {
         val sharedPref = getSharedPreferences("GameSettings", Context.MODE_PRIVATE)
-        if (!sharedPref.getBoolean("sound_on", true)) return
-
-        try {
-            if (mediaPlayer?.isPlaying == true) mediaPlayer?.seekTo(0)
-            mediaPlayer?.start()
-        } catch (e: Exception) {}
+        if (sharedPref.getBoolean("sound_on", true)) {
+            try {
+                if (mediaPlayer?.isPlaying == true) mediaPlayer?.seekTo(0)
+                mediaPlayer?.start()
+            } catch (e: Exception) {}
+        }
     }
 
     private fun vibratePhone() {
@@ -151,9 +139,7 @@ class MainActivity : AppCompatActivity(), SensorEventListener {
 
     override fun onResume() {
         super.onResume()
-        accelerometer?.also { sensor ->
-            sensorManager?.registerListener(this, sensor, SensorManager.SENSOR_DELAY_UI)
-        }
+        accelerometer?.also { sensor -> sensorManager?.registerListener(this, sensor, SensorManager.SENSOR_DELAY_UI) }
     }
 
     override fun onPause() {
@@ -167,7 +153,6 @@ class MainActivity : AppCompatActivity(), SensorEventListener {
             val y = event.values[1]
             val z = event.values[2]
             val acceleration = sqrt(x * x + y * y + z * z) - SensorManager.GRAVITY_EARTH
-
             if (acceleration > 12) {
                 val currentTime = System.currentTimeMillis()
                 if (currentTime - lastShakeTime > 1000) {

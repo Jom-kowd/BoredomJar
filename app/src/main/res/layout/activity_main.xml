@@ -1,6 +1,7 @@
 <?xml version="1.0" encoding="utf-8"?>
 <LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:app="http://schemas.android.com/apk/res-auto"
+    xmlns:tools="http://schemas.android.com/tools"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
     android:orientation="vertical"
@@ -96,7 +97,21 @@
                     android:text="😂 Funny"
                     android:paddingStart="20dp"
                     android:paddingEnd="20dp"
-                    android:textColor="@color/black"/>
+                    android:textColor="@color/black"
+                    android:layout_marginEnd="8dp"/>
+
+                <RadioButton
+                    android:id="@+id/rbChaos"
+                    android:layout_width="wrap_content"
+                    android:layout_height="40dp"
+                    android:background="@drawable/selector_tab"
+                    android:button="@null"
+                    android:text="🔥 CHAOS"
+                    android:paddingStart="20dp"
+                    android:paddingEnd="20dp"
+                    android:textColor="#D32F2F"
+                    android:visibility="gone"
+                    tools:visibility="visible"/>
             </RadioGroup>
         </HorizontalScrollView>
     </LinearLayout>

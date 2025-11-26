@@ -25,15 +25,10 @@
         </activity>
 
         <activity android:name=".NameActivity" android:exported="false" />
-
         <activity android:name=".MenuActivity" android:exported="false" />
-
         <activity android:name=".MainActivity" android:exported="false" />
-
         <activity android:name=".SettingsActivity" android:exported="false" />
-
         <activity android:name=".CreditsActivity" android:exported="false" />
 
     </application>
-
 </manifest>

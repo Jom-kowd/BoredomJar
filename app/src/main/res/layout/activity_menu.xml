@@ -23,6 +23,7 @@
             android:textSize="40sp"/>
 
         <TextView
+            android:id="@+id/tvAppTitle"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
             android:text="BOREDOM JAR"
@@ -30,7 +31,9 @@
             android:textStyle="bold"
             android:textColor="#FFFFFF"
             android:letterSpacing="0.1"
-            android:layout_marginTop="5dp"/>
+            android:layout_marginTop="5dp"
+            android:clickable="true"
+            android:focusable="true"/>
 
         <TextView
             android:id="@+id/tvGreeting"

@@ -17,7 +17,7 @@ class NameActivity : AppCompatActivity() {
         val etName = findViewById<EditText>(R.id.etName)
         val btnContinue = findViewById<Button>(R.id.btnContinue)
 
-        // Check if name already exists to skip
+        // If name already exists, skip this screen
         val sharedPref = getSharedPreferences("GameStats", Context.MODE_PRIVATE)
         val savedName = sharedPref.getString("user_name", "")
         if (!savedName.isNullOrEmpty()) {
