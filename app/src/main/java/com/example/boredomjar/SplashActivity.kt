@@ -11,10 +11,10 @@ class SplashActivity : AppCompatActivity() {
         super.onCreate(savedInstanceState)
         setContentView(R.layout.activity_splash)
 
-        // Wait 3 seconds (3000ms), then open Menu
+        // Wait 3 seconds, then go to Name Input
         Handler(Looper.getMainLooper()).postDelayed({
-            startActivity(Intent(this, MenuActivity::class.java))
-            finish() // Close the splash screen so we can't go back to it
+            startActivity(Intent(this, NameActivity::class.java))
+            finish()
         }, 3000)
     }
 }

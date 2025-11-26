@@ -14,20 +14,19 @@ class SettingsActivity : AppCompatActivity() {
         supportActionBar?.setDisplayHomeAsUpEnabled(true)
 
         val checkVibrate = findViewById<CheckBox>(R.id.checkVibration)
+        val checkSound = findViewById<CheckBox>(R.id.checkSound)
 
-        // Load saved setting
         val sharedPref = getSharedPreferences("GameSettings", Context.MODE_PRIVATE)
-        val isVibrateOn = sharedPref.getBoolean("vibrate_on", true)
-        checkVibrate.isChecked = isVibrateOn
 
-        // Save setting when clicked
+        checkVibrate.isChecked = sharedPref.getBoolean("vibrate_on", true)
         checkVibrate.setOnCheckedChangeListener { _, isChecked ->
-            val editor = sharedPref.edit()
-            editor.putBoolean("vibrate_on", isChecked)
-            editor.apply()
+            sharedPref.edit().putBoolean("vibrate_on", isChecked).apply()
+        }
 
-            if(isChecked) Toast.makeText(this, "Vibration ON", Toast.LENGTH_SHORT).show()
-            else Toast.makeText(this, "Vibration OFF", Toast.LENGTH_SHORT).show()
+        checkSound.isChecked = sharedPref.getBoolean("sound_on", true)
+        checkSound.setOnCheckedChangeListener { _, isChecked ->
+            sharedPref.edit().putBoolean("sound_on", isChecked).apply()
+            if(isChecked) Toast.makeText(this, "Sound ON", Toast.LENGTH_SHORT).show()
         }
     }
 
