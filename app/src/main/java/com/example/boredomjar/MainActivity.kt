@@ -13,16 +13,18 @@ import android.os.VibrationEffect
 import android.os.Vibrator
 import android.os.VibratorManager
 import android.view.View
-import android.widget.Button
+import android.widget.Button // Keep for compatibility if needed
 import android.widget.RadioButton
 import android.widget.TextView
 import android.widget.Toast
 import androidx.appcompat.app.AppCompatActivity
+import com.google.android.material.floatingactionbutton.FloatingActionButton // Added for new UI
 import kotlin.math.sqrt
 import kotlin.random.Random
 
 class MainActivity : AppCompatActivity(), SensorEventListener {
 
+    // --- Task Lists ---
     private val activeTasks = listOf("Do 20 jumping jacks.", "Go for a walk.", "Clean room for 5 mins.", "Plank for 45s.", "Dance!", "10 situps.")
     private val creativeTasks = listOf("Draw your pet.", "Write a potato poem.", "Build card tower.", "Photo of something blue.", "Learn magic trick.", "New signature.")
     private val chillTasks = listOf("Listen to 90s song.", "Drink water.", "Meditate 3 mins.", "Read a chapter.", "Watch satisfying video.", "Stare at wall.")
@@ -39,8 +41,9 @@ class MainActivity : AppCompatActivity(), SensorEventListener {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         setContentView(R.layout.activity_main)
-        supportActionBar?.setDisplayHomeAsUpEnabled(true)
-        supportActionBar?.title = "Mission Generator"
+
+        // Hide default action bar since we are using custom UI
+        supportActionBar?.hide()
 
         // Setup Sound
         try { mediaPlayer = MediaPlayer.create(this, R.raw.pop_sound) } catch (e: Exception) {}
@@ -49,15 +52,17 @@ class MainActivity : AppCompatActivity(), SensorEventListener {
         sensorManager = getSystemService(Context.SENSOR_SERVICE) as SensorManager
         accelerometer = sensorManager?.getDefaultSensor(Sensor.TYPE_ACCELEROMETER)
 
-        // Check Secret Logic
+        // Check Secret Logic (Chaos Mode)
         val rbChaos = findViewById<RadioButton>(R.id.rbChaos)
         val sharedPref = getSharedPreferences("GameStats", Context.MODE_PRIVATE)
         if (sharedPref.getBoolean("chaos_unlocked", false)) {
             rbChaos.visibility = View.VISIBLE
         }
 
-        val btnGenerate = findViewById<Button>(R.id.btnGetActivity)
-        val btnShare = findViewById<Button>(R.id.btnShare)
+        // --- UPDATED UI REFERENCES ---
+        // Note: In the new UI, these are FloatingActionButtons
+        val btnGenerate = findViewById<FloatingActionButton>(R.id.btnGetActivity)
+        val btnShare = findViewById<FloatingActionButton>(R.id.btnShare)
 
         btnGenerate.setOnClickListener { generateMission() }
 
@@ -74,6 +79,8 @@ class MainActivity : AppCompatActivity(), SensorEventListener {
 
     private fun generateMission() {
         val tvResult = findViewById<TextView>(R.id.tvResult)
+
+        // Find RadioButtons (Make sure IDs match XML)
         val rbActive = findViewById<RadioButton>(R.id.rbActive)
         val rbCreative = findViewById<RadioButton>(R.id.rbCreative)
         val rbCrush = findViewById<RadioButton>(R.id.rbCrush)
@@ -95,14 +102,15 @@ class MainActivity : AppCompatActivity(), SensorEventListener {
         }
         lastMission = newMission
 
+        // Animation
         tvResult.alpha = 0f
         tvResult.text = newMission
         tvResult.animate().alpha(1f).setDuration(500)
 
         // Save Stats
         val sharedPref = getSharedPreferences("GameStats", Context.MODE_PRIVATE)
-        val count = sharedPref.getInt("kill_count", 0)
-        sharedPref.edit().putInt("kill_count", count + 1).apply()
+        val count = sharedPref.getInt("missions_done", 0) // Updated key to match MenuActivity
+        sharedPref.edit().putInt("missions_done", count + 1).apply()
 
         vibratePhone()
         playSound()
@@ -153,7 +161,9 @@ class MainActivity : AppCompatActivity(), SensorEventListener {
             val y = event.values[1]
             val z = event.values[2]
             val acceleration = sqrt(x * x + y * y + z * z) - SensorManager.GRAVITY_EARTH
-            if (acceleration > 12) {
+
+            // Increased threshold to prevent accidental shakes
+            if (acceleration > 13) {
                 val currentTime = System.currentTimeMillis()
                 if (currentTime - lastShakeTime > 1000) {
                     lastShakeTime = currentTime
@@ -165,6 +175,5 @@ class MainActivity : AppCompatActivity(), SensorEventListener {
     }
 
     override fun onAccuracyChanged(sensor: Sensor?, accuracy: Int) {}
-    override fun onSupportNavigateUp(): Boolean { finish(); return true }
     override fun onDestroy() { super.onDestroy(); mediaPlayer?.release(); mediaPlayer = null }
 }

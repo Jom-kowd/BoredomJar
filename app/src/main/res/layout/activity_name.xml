@@ -1,48 +1,42 @@
 <?xml version="1.0" encoding="utf-8"?>
-<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+<LinearLayout
+    xmlns:android="http://schemas.android.com/apk/res/android"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
     android:orientation="vertical"
     android:gravity="center"
-    android:padding="30dp"
-    android:background="#F0F2F5">
+    android:background="@drawable/bg_app_gradient"
+    android:padding="32dp">
 
     <TextView
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
-        android:text="👋 Welcome!"
-        android:textSize="32sp"
+        android:text="Who are you?"
+        android:textSize="24sp"
+        android:textColor="#FFFFFF"
         android:textStyle="bold"
-        android:textColor="#00695C"
-        android:layout_marginBottom="10dp"/>
-
-    <TextView
-        android:layout_width="wrap_content"
-        android:layout_height="wrap_content"
-        android:text="What should we call you?"
-        android:textSize="16sp"
-        android:textColor="#757575"
-        android:layout_marginBottom="30dp"/>
+        android:layout_marginBottom="32dp"/>
 
     <EditText
         android:id="@+id/etName"
         android:layout_width="match_parent"
-        android:layout_height="60dp"
+        android:layout_height="wrap_content"
         android:hint="Enter your name"
-        android:inputType="textPersonName"
-        android:padding="15dp"
-        android:background="@android:color/white"
-        android:elevation="4dp"
-        android:textColor="#000000"
-        android:layout_marginBottom="30dp"/>
+        android:textColor="#FFFFFF"
+        android:textColorHint="#B3FFFFFF"
+        android:backgroundTint="#FFFFFF"
+        android:inputType="textCapWords"
+        android:maxLines="1"
+        android:padding="16dp"/>
 
     <Button
         android:id="@+id/btnContinue"
         android:layout_width="match_parent"
-        android:layout_height="60dp"
-        android:text="Continue"
-        android:textSize="18sp"
+        android:layout_height="wrap_content"
+        android:text="CONTINUE"
+        android:backgroundTint="#FFD200"
+        android:textColor="#4A00E0"
         android:textStyle="bold"
-        android:backgroundTint="#009688"/>
+        android:layout_marginTop="32dp"/>
 
 </LinearLayout>
